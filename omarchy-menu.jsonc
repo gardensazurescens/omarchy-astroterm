@@ -1,0 +1,9 @@
+{
+  "astroterm": {
+    "icon": "✦",
+    "label": "Astroterm",
+    "action": "omarchy-launch-terminal astroterm",
+    "description": "Explore the night sky in your terminal",
+    "aliases": ["stars", "planetarium", "astronomy"]
+  }
+}

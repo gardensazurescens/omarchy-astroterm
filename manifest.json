@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.gardensazurescens.astroterm",
+  "name": "Astroterm",
+  "version": "1.0.0",
+  "author": "gardensazurescens",
+  "license": "MIT",
+  "description": "Launch the Astroterm terminal planetarium from the Omarchy bar",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Astroterm",
+    "description": "Open a live star map in a terminal",
+    "category": "Science",
+    "defaultSection": "left",
+    "allowMultiple": false,
+    "defaults": {
+      "city": "",
+      "color": false,
+      "constellations": false,
+      "unicode": false,
+      "grid": false,
+      "speed": 1,
+      "aspectRatio": 0
+    },
+    "schema": [
+      {
+        "key": "city",
+        "type": "string",
+        "label": "City"
+      },
+      {
+        "key": "color",
+        "type": "boolean",
+        "label": "Use terminal colors"
+      },
+      {
+        "key": "constellations",
+        "type": "boolean",
+        "label": "Draw constellations"
+      },
+      {
+        "key": "unicode",
+        "type": "boolean",
+        "label": "Use Unicode characters"
+      },
+      {
+        "key": "grid",
+        "type": "boolean",
+        "label": "Show azimuthal grid"
+      },
+      {
+        "key": "speed",
+        "type": "number",
+        "label": "Animation speed"
+      },
+      {
+        "key": "aspectRatio",
+        "type": "number",
+        "label": "Terminal aspect ratio"
+      }
+    ]
+  }
+}

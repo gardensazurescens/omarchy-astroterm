@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Astroterm
+GenericName=Terminal Planetarium
+Comment=Explore the night sky in your terminal
+Exec=omarchy-launch-terminal astroterm
+Icon=weather-clear-night
+Terminal=false
+Type=Application
+Categories=Science;
+Keywords=astroterm;astronomy;planetarium;stars;space;constellations;
+StartupNotify=false

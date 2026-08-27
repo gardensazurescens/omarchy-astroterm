@@ -23,11 +23,8 @@ does not download, install, or modify Astroterm.
 - `astroterm` available on `PATH`
 - `jq` for the optional helper commands below
 
-Install Astroterm from your distribution first. On Arch Linux:
-
-```bash
-sudo pacman -S astroterm
-```
+Install Astroterm using your distribution's normal package manager before
+enabling this plugin.
 
 ## Install
 

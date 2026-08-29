@@ -13,7 +13,6 @@ does not download, install, or modify Astroterm.
 - Native settings popup with a searchable location field (geocoded suggestions) and rendering toggles
 - Optional colors, constellation lines, Unicode characters, and azimuthal grid
 - Animation speed presets
-- Automatic or manually selected terminal aspect ratio
 - Right-click launch shortcut
 - Optional desktop launcher and Omarchy menu entry
 
@@ -78,7 +77,6 @@ omarchy bar set "$PLUGIN_ID" constellations true --json
 omarchy bar set "$PLUGIN_ID" unicode true --json
 omarchy bar set "$PLUGIN_ID" grid false --json
 omarchy bar set "$PLUGIN_ID" speed 1 --json
-omarchy bar set "$PLUGIN_ID" aspectRatio 0 --json
 ```
 
 When a `city` is set without `latitude`/`longitude`, the plugin falls back to

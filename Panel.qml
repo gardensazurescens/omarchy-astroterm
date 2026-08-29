@@ -23,7 +23,6 @@ Panel {
   readonly property bool useUnicode: setting("unicode", false) === true
   readonly property bool useGrid: setting("grid", false) === true
   readonly property real speed: Math.max(0.01, Number(setting("speed", 1)) || 1)
-  readonly property real aspectRatio: Math.max(0, Number(setting("aspectRatio", 0)) || 0)
 
   property bool editingLocation: false
   property bool savingLocation: false
@@ -428,29 +427,6 @@ Panel {
             }
           }
 
-          Column {
-            width: parent.width
-            spacing: Style.space(7)
-
-            PanelSectionHeader {
-              text: "TERMINAL SHAPE"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-            }
-
-            Row {
-              spacing: Style.space(7)
-              Repeater {
-                model: [0, 1, 1.5, 2, 2.5]
-                Button {
-                  required property real modelData
-                  text: modelData === 0 ? "Auto" : modelData + ":1"
-                  selected: root.aspectRatio === modelData
-                  onClicked: root.persist({ aspectRatio: modelData })
-                }
-              }
-            }
-          }
         }
       }
     }

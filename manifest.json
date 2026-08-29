@@ -26,8 +26,7 @@
       "constellations": false,
       "unicode": false,
       "grid": false,
-      "speed": 1,
-      "aspectRatio": 0
+      "speed": 1
     },
     "schema": [
       {
@@ -59,11 +58,6 @@
         "key": "speed",
         "type": "number",
         "label": "Animation speed"
-      },
-      {
-        "key": "aspectRatio",
-        "type": "number",
-        "label": "Terminal aspect ratio"
       }
     ]
   }

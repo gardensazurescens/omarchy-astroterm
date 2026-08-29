@@ -15,7 +15,6 @@ BarWidget {
   readonly property bool unicode: setting("unicode", false) === true
   readonly property bool grid: setting("grid", false) === true
   readonly property real speed: Math.max(0.01, Number(setting("speed", 1)) || 1)
-  readonly property real aspectRatio: Math.max(0, Number(setting("aspectRatio", 0)) || 0)
 
   function shellQuote(value) {
     return "'" + String(value).replace(/'/g, "'\\''") + "'"
@@ -30,7 +29,6 @@ BarWidget {
     if (unicode) args.push("--unicode")
     if (grid) args.push("--grid")
     if (speed !== 1) args.push("--speed", String(speed))
-    if (aspectRatio > 0) args.push("--aspect-ratio", String(aspectRatio))
     if (root.bar) root.bar.run("omarchy-launch-terminal " + args.join(" "))
   }
 

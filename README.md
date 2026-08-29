@@ -24,8 +24,15 @@ does not download, install, or modify Astroterm.
 - `curl` for location search in the settings popup
 - `jq` for the optional helper commands below
 
-Install Astroterm using your distribution's normal package manager before
-enabling this plugin. No manual PATH configuration is needed.
+Install Astroterm before enabling this plugin. On Arch-based Omarchy systems,
+you can use either:
+
+```bash
+yay -S astroterm
+```
+
+or **Omarchy > Install > AUR > astroterm**. No manual PATH configuration is
+needed after installation.
 
 ## Install
 

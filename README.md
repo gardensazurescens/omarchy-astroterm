@@ -8,8 +8,8 @@ Astroterm is a separate application and must be installed first. The plugin
 does not download, install, or modify Astroterm.
 
 <p align="center">
-  <img src="assets/popup.png" alt="Astroterm settings popup" width="420">
   <img src="assets/astroterm.png" alt="Astroterm star map" width="720">
+  <img src="assets/popup.png" alt="Astroterm settings popup" width="420">
 </p>
 
 The popup controls the view, while the star map opens in the configured Omarchy

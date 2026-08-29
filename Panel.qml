@@ -17,9 +17,6 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   readonly property string city: String(setting("city", ""))
-  readonly property real latitude: Number(setting("latitude", NaN))
-  readonly property real longitude: Number(setting("longitude", NaN))
-  readonly property bool hasCoordinates: !isNaN(latitude) && !isNaN(longitude)
   readonly property string locationLabel: root.city !== "" ? root.city : "Default location"
   readonly property bool useColor: setting("color", false) === true
   readonly property bool useConstellations: setting("constellations", false) === true
@@ -369,17 +366,6 @@ Panel {
               }
             }
 
-            Text {
-              visible: !root.editingLocation
-              width: parent.width
-              text: root.hasCoordinates
-                ? "Using exact coordinates for the selected location."
-                : "Leave empty for Astroterm's default coordinates."
-              color: Qt.darker(root.foreground, 1.45)
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              wrapMode: Text.WordWrap
-            }
           }
 
           Column {

@@ -20,6 +20,8 @@
     "allowMultiple": false,
     "defaults": {
       "city": "",
+      "latitude": null,
+      "longitude": null,
       "color": false,
       "constellations": false,
       "unicode": false,

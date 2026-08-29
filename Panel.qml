@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -16,6 +17,10 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   readonly property string city: String(setting("city", ""))
+  readonly property real latitude: Number(setting("latitude", NaN))
+  readonly property real longitude: Number(setting("longitude", NaN))
+  readonly property bool hasCoordinates: !isNaN(latitude) && !isNaN(longitude)
+  readonly property string locationLabel: root.city !== "" ? root.city : "Default location"
   readonly property bool useColor: setting("color", false) === true
   readonly property bool useConstellations: setting("constellations", false) === true
   readonly property bool useUnicode: setting("unicode", false) === true
@@ -23,8 +28,18 @@ Panel {
   readonly property real speed: Math.max(0.01, Number(setting("speed", 1)) || 1)
   readonly property real aspectRatio: Math.max(0, Number(setting("aspectRatio", 0)) || 0)
 
+  property bool editingLocation: false
+  property bool savingLocation: false
+  property var locationSuggestions: []
+  property int suggestionIndex: 0
+  property string geocodePendingQuery: ""
+  property string geocodeActiveQuery: ""
+
   function open() { root.controller.show() }
-  function close() { root.controller.hide() }
+  function close() {
+    if (root.editingLocation) root.cancelEditingLocation()
+    root.controller.hide()
+  }
   function toggle() { if (root.opened) root.close(); else root.open() }
 
   function switchPanel(direction) {
@@ -47,6 +62,109 @@ Panel {
     if (root.hostWidget && root.hostWidget.launch) root.hostWidget.launch()
   }
 
+  // ---- Location editing. Mirrors the weather panel: clicking the location
+  //      label swaps it for a search field, picking a geocoded suggestion
+  //      persists name + coordinates to the widget's shell.json entry, and an
+  //      empty commit returns to Astroterm's default coordinates.
+  function startEditingLocation() {
+    editingLocation = true
+    savingLocation = false
+    locationSuggestions = []
+    suggestionIndex = 0
+    Qt.callLater(function() {
+      locationField.text = root.city
+      locationField.selectAll()
+      locationField.forceActiveFocus()
+    })
+  }
+
+  function cancelEditingLocation() {
+    editingLocation = false
+    savingLocation = false
+    locationSuggestions = []
+    geocodeDebounce.stop()
+    Qt.callLater(function() { if (keyCatcher) keyCatcher.forceActiveFocus() })
+  }
+
+  function commitLocation() {
+    var name = String(locationField.text || "").trim()
+    if (name === "") {
+      clearLocation()
+      return
+    }
+    var suggestion = locationSuggestions[Math.max(0, Math.min(suggestionIndex, locationSuggestions.length - 1))]
+    if (suggestion) {
+      persist({ city: suggestion.name, latitude: suggestion.latitude, longitude: suggestion.longitude })
+    } else {
+      persist({ city: name, latitude: null, longitude: null })
+    }
+    cancelEditingLocation()
+  }
+
+  function pickSuggestion(suggestion) {
+    if (!suggestion) return
+    persist({ city: suggestion.name, latitude: suggestion.latitude, longitude: suggestion.longitude })
+    cancelEditingLocation()
+  }
+
+  function clearLocation() {
+    persist({ city: "", latitude: null, longitude: null })
+    cancelEditingLocation()
+  }
+
+  function parseGeocodingResults(raw) {
+    try {
+      var data = JSON.parse(String(raw || "{}"))
+      var results = data.results
+      if (!results || !results.length) return []
+      var out = []
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i]
+        if (!r || !r.name || r.latitude === undefined || r.longitude === undefined) continue
+        var region = [r.admin1, r.country].filter(function(part) { return !!part }).join(", ")
+        out.push({ name: String(r.name), description: region, latitude: r.latitude, longitude: r.longitude })
+      }
+      return out
+    } catch (e) {
+      return []
+    }
+  }
+
+  function requestGeocode() {
+    var query = locationField.text.trim()
+    if (query.length < 2) {
+      locationSuggestions = []
+      return
+    }
+    geocodePendingQuery = query
+    if (!geocodeProc.running) startGeocode()
+  }
+
+  function startGeocode() {
+    geocodeActiveQuery = geocodePendingQuery
+    geocodeProc.command = ["curl", "-fsS", "--max-time", "5",
+      "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json"]
+    geocodeProc.running = true
+  }
+
+  Process {
+    id: geocodeProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        root.locationSuggestions = root.editingLocation ? root.parseGeocodingResults(text) : []
+        root.suggestionIndex = 0
+        if (root.geocodePendingQuery !== root.geocodeActiveQuery) Qt.callLater(root.startGeocode)
+      }
+    }
+  }
+
+  Timer {
+    id: geocodeDebounce
+    interval: 300
+    onTriggered: root.requestGeocode()
+  }
+
   KeyboardPanel {
     id: popup
     anchorItem: root.anchorItem
@@ -61,7 +179,9 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      blocked: root.editingLocation
       onCloseRequested: root.close()
+      onReturnRequested: root.startEditingLocation()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(text) {
         if (text === "o" || text === "O") root.launch()
@@ -83,7 +203,7 @@ Panel {
           PanelHero {
             width: parent.width
             title: "Astroterm"
-            meta: root.city === "" ? "Default location" : root.city
+            meta: root.locationLabel
             foreground: root.foreground
             fontFamily: root.fontFamily
             iconComponent: Component {
@@ -103,6 +223,7 @@ Panel {
           }
 
           Column {
+            id: locationSection
             width: parent.width
             spacing: Style.space(7)
 
@@ -112,19 +233,148 @@ Panel {
               fontFamily: root.fontFamily
             }
 
-            TextField {
-              id: cityField
+            Row {
+              visible: !root.editingLocation
+              spacing: Style.space(6)
+
+              TapHandler {
+                onTapped: root.startEditingLocation()
+              }
+              HoverHandler {
+                cursorShape: Qt.PointingHandCursor
+              }
+
+              Text {
+                text: ""
+                color: Qt.darker(root.foreground, 1.4)
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+                anchors.verticalCenter: parent.verticalCenter
+              }
+              Text {
+                text: root.locationLabel.toUpperCase()
+                color: Qt.darker(root.foreground, 1.4)
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+                font.letterSpacing: 1
+                anchors.verticalCenter: parent.verticalCenter
+              }
+            }
+
+            Row {
+              visible: root.editingLocation
+              spacing: Style.space(6)
+
+              TextField {
+                id: locationField
+                width: locationSection.width - clearLocationBox.width - Style.space(6)
+                enabled: !root.savingLocation
+                placeholderText: "Search city"
+                foreground: root.foreground
+                font.family: root.fontFamily
+
+                onTextChanged: if (root.editingLocation && !root.savingLocation) geocodeDebounce.restart()
+
+                Keys.onPressed: function(event) {
+                  if (event.key === Qt.Key_Escape) {
+                    root.cancelEditingLocation()
+                    event.accepted = true
+                  } else if (event.key === Qt.Key_Down) {
+                    if (root.suggestionIndex < root.locationSuggestions.length - 1) root.suggestionIndex++
+                    event.accepted = true
+                  } else if (event.key === Qt.Key_Up) {
+                    if (root.suggestionIndex > 0) root.suggestionIndex--
+                    event.accepted = true
+                  } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    root.commitLocation()
+                    event.accepted = true
+                  }
+                }
+              }
+
+              Rectangle {
+                id: clearLocationBox
+                width: Style.space(18)
+                height: Style.space(18)
+                anchors.verticalCenter: parent.verticalCenter
+                radius: Math.min(4, Style.cornerRadius)
+                color: clearLocationArea.containsMouse ? Style.hoverFillFor(root.foreground, Color.accent) : "transparent"
+
+                Text {
+                  anchors.centerIn: parent
+                  text: "✕"
+                  font.family: root.fontFamily
+                  color: Qt.darker(root.foreground, 1.4)
+                  font.pixelSize: Style.font.bodySmall
+                }
+
+                MouseArea {
+                  id: clearLocationArea
+                  anchors.fill: parent
+                  enabled: !root.savingLocation
+                  hoverEnabled: true
+                  cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                  onClicked: root.clearLocation()
+                }
+              }
+            }
+
+            Column {
+              visible: root.editingLocation && !root.savingLocation && root.locationSuggestions.length > 0
               width: parent.width
-              text: root.city
-              placeholderText: "City, e.g. Phoenix"
-              foreground: root.foreground
-              font.family: root.fontFamily
-              onAccepted: root.persist({ city: text.trim() })
+              spacing: 0
+
+              Repeater {
+                model: root.locationSuggestions
+
+                Rectangle {
+                  required property var modelData
+                  required property int index
+                  width: parent.width
+                  height: suggestionRow.implicitHeight + Style.space(12)
+                  radius: Style.cornerRadius
+                  color: index === root.suggestionIndex ? Style.hoverFillFor(root.foreground, Color.accent) : "transparent"
+
+                  Row {
+                    id: suggestionRow
+                    anchors.left: parent.left
+                    anchors.leftMargin: Style.space(16)
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Style.space(8)
+
+                    Text {
+                      text: modelData.name
+                      color: index === root.suggestionIndex ? Style.hoverStateColor(root.foreground, Color.accent) : root.foreground
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.body
+                    }
+                    Text {
+                      visible: text !== ""
+                      text: modelData.description
+                      color: Qt.darker(root.foreground, 1.5)
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.bodySmall
+                      anchors.verticalCenter: parent.verticalCenter
+                    }
+                  }
+
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPositionChanged: root.suggestionIndex = index
+                    onClicked: root.pickSuggestion(modelData)
+                  }
+                }
+              }
             }
 
             Text {
+              visible: !root.editingLocation
               width: parent.width
-              text: "Leave empty for Astroterm's default coordinates."
+              text: root.hasCoordinates
+                ? "Using exact coordinates for the selected location."
+                : "Leave empty for Astroterm's default coordinates."
               color: Qt.darker(root.foreground, 1.45)
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption

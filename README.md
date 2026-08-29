@@ -10,7 +10,7 @@ does not download, install, or modify Astroterm.
 ## Features
 
 - Bar button with a `✦` icon
-- Native settings popup with a city field and rendering toggles
+- Native settings popup with a searchable location field (geocoded suggestions) and rendering toggles
 - Optional colors, constellation lines, Unicode characters, and azimuthal grid
 - Animation speed presets
 - Automatic or manually selected terminal aspect ratio
@@ -20,11 +20,13 @@ does not download, install, or modify Astroterm.
 ## Requirements
 
 - Omarchy Quattro with the shell plugin system
-- `astroterm` available on `PATH`
+- Astroterm installed from your distribution; the Arch package provides
+  `/usr/bin/astroterm` automatically
+- `curl` for location search in the settings popup
 - `jq` for the optional helper commands below
 
 Install Astroterm using your distribution's normal package manager before
-enabling this plugin.
+enabling this plugin. No manual PATH configuration is needed.
 
 ## Install
 
@@ -50,6 +52,15 @@ Replace `PLUGIN_ID` with the `id` from `manifest.json`.
 - Right-click the bar icon to launch the current view without opening the popup.
 - Press `Esc` to close the popup.
 
+### Location
+
+Click the location label (under **LOCATION**) to edit it. Type a city name and
+pick one of the geocoded suggestions. The search uses the public Open-Meteo
+geocoding API and does not require an API key. The name and exact coordinates
+are saved and passed to Astroterm as `--latitude`/`--longitude`. Clear the field
+to return to Astroterm's default coordinates. Without a stored location,
+Astroterm uses its own default observer coordinates.
+
 Settings are saved to the widget entry in `~/.config/omarchy/shell.json` and
 apply the next time Astroterm is launched. An already running Astroterm process
 does not reload command-line options.
@@ -70,7 +81,10 @@ omarchy bar set "$PLUGIN_ID" speed 1 --json
 omarchy bar set "$PLUGIN_ID" aspectRatio 0 --json
 ```
 
-The popup is the preferred way to change these values.
+When a `city` is set without `latitude`/`longitude`, the plugin falls back to
+Astroterm's `--city` lookup. Setting `latitude` and `longitude` (numbers)
+together takes precedence and is what the popup writes after you pick a
+suggestion. The popup is the preferred way to change these values.
 
 ## Optional Launcher Integration
 

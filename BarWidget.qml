@@ -7,6 +7,9 @@ BarWidget {
   moduleName: "io.github.gardensazurescens.astroterm"
 
   readonly property string city: String(setting("city", ""))
+  readonly property real latitude: Number(setting("latitude", NaN))
+  readonly property real longitude: Number(setting("longitude", NaN))
+  readonly property bool hasCoordinates: !isNaN(latitude) && !isNaN(longitude)
   readonly property bool color: setting("color", false) === true
   readonly property bool constellations: setting("constellations", false) === true
   readonly property bool unicode: setting("unicode", false) === true
@@ -20,7 +23,8 @@ BarWidget {
 
   function launch() {
     var args = ["astroterm"]
-    if (city.trim() !== "") args.push("--city", shellQuote(city.trim()))
+    if (hasCoordinates) args.push("--latitude", String(latitude), "--longitude", String(longitude))
+    else if (city.trim() !== "") args.push("--city", shellQuote(city.trim()))
     if (color) args.push("--color")
     if (constellations) args.push("--constellations")
     if (unicode) args.push("--unicode")
